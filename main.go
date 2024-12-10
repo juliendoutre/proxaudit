@@ -2,24 +2,28 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"flag"
-	"io"
 	"log"
-	"net"
 	"net/http"
-	"net/http/httputil"
 	"os"
 	"os/signal"
+	"path"
 	"strconv"
 	"syscall"
 	"time"
 
+	"github.com/elazarl/goproxy"
 	"go.uber.org/zap"
 )
 
 func main() {
+	mkcertDir := path.Join(os.Getenv("HOME"), "Library", "Application Support", "mkcert")
+
 	port := flag.Uint64("port", 8000, "port to listen on")
+	caCertPath := flag.String("ca-cert", path.Join(mkcertDir, "rootCA.pem"), "path to a CA certificate")
+	caKeyPath := flag.String("ca-key", path.Join(mkcertDir, "rootCA-key.pem"), "path to a CA private key")
 	flag.Parse()
 
 	logger, err := zap.NewProductionConfig().Build()
@@ -27,9 +31,31 @@ func main() {
 		log.Panic(err)
 	}
 
+	cert, err := tls.LoadX509KeyPair(*caCertPath, *caKeyPath)
+	if err != nil {
+		logger.Panic("Failed loading CA certificate", zap.Error(err))
+	}
+
+	goproxy.GoproxyCa = cert
+
+	proxy := goproxy.NewProxyHttpServer()
+	proxy.Verbose = false
+	proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
+	proxy.OnRequest(goproxy.ReqConditionFunc(
+		func(req *http.Request, _ *goproxy.ProxyCtx) bool {
+			return req.Method != http.MethodConnect
+		},
+	)).DoFunc(
+		func(req *http.Request, _ *goproxy.ProxyCtx) (*http.Request, *http.Response) {
+			logger.Info("received a request", zap.String("method", req.Method), zap.String("url", req.URL.String()))
+
+			return req, nil
+		},
+	)
+
 	server := &http.Server{
 		Addr:              ":" + strconv.FormatUint(*port, 10),
-		Handler:           &handler{logger},
+		Handler:           proxy,
 		ReadTimeout:       10 * time.Second,
 		ReadHeaderTimeout: 5 * time.Second,
 		IdleTimeout:       120 * time.Second,
@@ -56,48 +82,4 @@ func waitForSignal(server *http.Server, logger *zap.Logger) {
 	if err := server.Shutdown(context.Background()); err != nil {
 		logger.Error("Failed shutting down HTTPS proxy server", zap.Error(err))
 	}
-}
-
-type handler struct {
-	logger *zap.Logger
-}
-
-func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	h.logger.Info("received request", zap.String("method", req.Method), zap.String("url", req.URL.String()))
-
-	if req.Method == http.MethodConnect {
-		h.handleConnect(rw, req)
-	} else {
-		httputil.NewSingleHostReverseProxy(req.URL).ServeHTTP(rw, req)
-	}
-}
-
-func (h *handler) handleConnect(rw http.ResponseWriter, req *http.Request) {
-	hijacker, ok := rw.(http.Hijacker)
-	if !ok {
-		http.Error(rw, "Hijacking not supported", http.StatusInternalServerError)
-
-		return
-	}
-
-	clientConn, _, err := hijacker.Hijack()
-	if err != nil {
-		http.Error(rw, err.Error(), http.StatusServiceUnavailable)
-
-		return
-	}
-	defer clientConn.Close()
-
-	serverConn, err := net.Dial("tcp", req.Host)
-	if err != nil {
-		http.Error(rw, err.Error(), http.StatusServiceUnavailable)
-
-		return
-	}
-	defer serverConn.Close()
-
-	clientConn.Write([]byte("HTTP/1.1 200 Connection Established\r\n\r\n"))
-
-	go io.Copy(serverConn, clientConn)
-	io.Copy(clientConn, serverConn)
 }

@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"os"
@@ -63,5 +65,39 @@ type handler struct {
 func (h *handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	h.logger.Info("received request", zap.String("method", req.Method), zap.String("url", req.URL.String()))
 
-	httputil.NewSingleHostReverseProxy(req.URL).ServeHTTP(rw, req)
+	if req.Method == http.MethodConnect {
+		h.handleConnect(rw, req)
+	} else {
+		httputil.NewSingleHostReverseProxy(req.URL).ServeHTTP(rw, req)
+	}
+}
+
+func (h *handler) handleConnect(rw http.ResponseWriter, req *http.Request) {
+	hijacker, ok := rw.(http.Hijacker)
+	if !ok {
+		http.Error(rw, "Hijacking not supported", http.StatusInternalServerError)
+
+		return
+	}
+
+	clientConn, _, err := hijacker.Hijack()
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusServiceUnavailable)
+
+		return
+	}
+	defer clientConn.Close()
+
+	serverConn, err := net.Dial("tcp", req.Host)
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusServiceUnavailable)
+
+		return
+	}
+	defer serverConn.Close()
+
+	clientConn.Write([]byte("HTTP/1.1 200 Connection Established\r\n\r\n"))
+
+	go io.Copy(serverConn, clientConn)
+	io.Copy(clientConn, serverConn)
 }

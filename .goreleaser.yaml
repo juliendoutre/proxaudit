@@ -1,0 +1,54 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./cmd
+    binary: proxaudit
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+
+archives:
+  - format: tar.gz
+    # this name template makes the OS and Arch compatible with the results of `uname`.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+sboms:
+  - artifacts: archive
+
+brews:
+- name: proxaudit
+  repository:
+    owner: juliendoutre
+    name: proxaudit
+    branch: "homebrew-update-{{ .Version	}}"
+    pull_request:
+      enabled: true
+      base:
+        owner: juliendoutre
+        name: proxaudit
+        branch: main
+  directory: Formula
+  url_template: "https://github.com/juliendoutre/proxaudit/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+  dependencies:
+    - name: mkcert
+      version: 1.4.4

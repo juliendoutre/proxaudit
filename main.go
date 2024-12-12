@@ -66,7 +66,7 @@ func run(port uint64, outputPath, caCertPath, caKeyPath string) int {
 
 	go runServer(server, logger, port)
 
-	instrumentedCommand := newInstrumentedCommand(context.Background(), command, port)
+	instrumentedCommand := newInstrumentedCommand(context.Background(), command, port, caCertPath)
 
 	status, err := runCommand(instrumentedCommand)
 	if err != nil {
@@ -150,7 +150,7 @@ func runServer(server *http.Server, logger *zap.Logger, port uint64) {
 	}
 }
 
-func newInstrumentedCommand(ctx context.Context, command string, port uint64) *exec.Cmd {
+func newInstrumentedCommand(ctx context.Context, command string, port uint64, caCertPath string) *exec.Cmd {
 	cmd := exec.CommandContext(ctx, "bash", "-c", command)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
@@ -161,6 +161,7 @@ func newInstrumentedCommand(ctx context.Context, command string, port uint64) *e
 		fmt.Sprintf("HTTPS_PROXY=http://localhost:%d", port),
 		fmt.Sprintf("http_proxy=http://localhost:%d", port),
 		fmt.Sprintf("https_proxy=http://localhost:%d", port),
+		"NODE_EXTRA_CA_CERTS="+caCertPath,
 	)
 
 	return cmd

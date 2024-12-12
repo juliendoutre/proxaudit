@@ -2,15 +2,21 @@
 
 proxaudit is a binary that transparently instrument any program for HTTP and HTTPs requests.
 
+## Getting started
+
+```shell
+brew tap juliendoutre/proxaudit https://github.com/juliendoutre/proxaudit
+brew install proxaudit
+mkcert -install
+```
+
 ## Usage
 
 ```shell
-brew install mkcert
-mkcert -install
-go run ./main.go -- curl http://google.com
-go run ./main.go -- curl https://google.com
-go run ./main.go # Read from stdin
-go run ./main.go -output logs.jsonl -- curl https://google.com # Write logs to file
+proxaudit -- curl http://google.com
+proxaudit -- curl https://google.com
+proxaudit # Read from stdin
+proxaudit -output logs.jsonl -- curl https://google.com # Write logs to file
 ```
 
 ## Development

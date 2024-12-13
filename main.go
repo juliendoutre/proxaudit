@@ -21,14 +21,26 @@ import (
 	"go.uber.org/zap"
 )
 
+var (
+	version = "unknown"
+	commit  = "unknown" //nolint:gochecknoglobals
+)
+
 func main() {
 	mkcertDir := path.Join(os.Getenv("HOME"), "Library", "Application Support", "mkcert")
 
 	port := flag.Uint64("port", 8000, "port to listen on")
 	caCertPath := flag.String("ca-cert", path.Join(mkcertDir, "rootCA.pem"), "path to a CA certificate")
 	caKeyPath := flag.String("ca-key", path.Join(mkcertDir, "rootCA-key.pem"), "path to a CA private key")
-	outputPath := flag.String("output", "stderr", "Path to a file to write logs to.")
+	outputPath := flag.String("output", "stderr", "Path to a file to write logs to")
+	showVersion := flag.Bool("version", false, "Show this program's version and exit")
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Fprintf(os.Stdout, "proxaudit %s (%s)\n", version, commit)
+
+		return
+	}
 
 	os.Exit(run(*port, *outputPath, *caCertPath, *caKeyPath))
 }

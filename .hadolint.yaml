@@ -1,0 +1,4 @@
+failure-threshold: error
+strict-labels: true
+trustedRegistries:
+  - index.docker.io

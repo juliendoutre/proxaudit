@@ -51,3 +51,23 @@ brews:
   dependencies:
     - name: mkcert
       version: 1.4.4
+
+dockers:
+  - image_templates:
+      - "ghcr.io/juliendoutre/proxaudit:{{ .Tag }}-amd64"
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--platform=linux/amd64"
+  - image_templates:
+      - "ghcr.io/juliendoutre/proxaudit:{{ .Tag }}-arm64"
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--platform=linux/arm64"
+
+docker_manifests:
+  - name_template: "ghcr.io/juliendoutre/proxaudit:{{ .Tag }}"
+    image_templates:
+      - "ghcr.io/juliendoutre/proxaudit:{{ .Tag }}-amd64"
+      - "ghcr.io/juliendoutre/proxaudit:{{ .Tag }}-arm64"

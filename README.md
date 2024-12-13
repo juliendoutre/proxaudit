@@ -16,7 +16,8 @@ mkcert -install
 proxaudit -- curl http://google.com
 proxaudit -- curl https://google.com
 proxaudit # Read from stdin
-proxaudit -output logs.jsonl -- curl https://google.com # Write logs to file
+proxaudit -output logs.jsonl -- pip install requests # Write logs to file
+proxaudit -server # Run the proxy server only (no command wrapping)
 ```
 
 ## Development

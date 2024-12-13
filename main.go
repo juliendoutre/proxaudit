@@ -15,6 +15,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/elazarl/goproxy"
@@ -34,6 +35,7 @@ func main() {
 	caKeyPath := flag.String("ca-key", path.Join(mkcertDir, "rootCA-key.pem"), "path to a CA private key")
 	outputPath := flag.String("output", "stderr", "Path to a file to write logs to")
 	showVersion := flag.Bool("version", false, "Show this program's version and exit")
+	serverMode := flag.Bool("server", false, "Run proxaudit as a server")
 	flag.Parse()
 
 	if *showVersion {
@@ -42,10 +44,10 @@ func main() {
 		return
 	}
 
-	os.Exit(run(*port, *outputPath, *caCertPath, *caKeyPath))
+	os.Exit(run(*port, *outputPath, *caCertPath, *caKeyPath, *serverMode))
 }
 
-func run(port uint64, outputPath, caCertPath, caKeyPath string) int {
+func run(port uint64, outputPath, caCertPath, caKeyPath string, serverMode bool) int {
 	logger, err := getLogger(outputPath)
 	if err != nil {
 		log.Println("Failed creating logger")
@@ -62,13 +64,6 @@ func run(port uint64, outputPath, caCertPath, caKeyPath string) int {
 		return 1
 	}
 
-	command, err := getCommand(logger)
-	if err != nil {
-		logger.Error("Failed reading command", zap.Error(err))
-
-		return 1
-	}
-
 	server := newProxyServer(port, logger)
 	defer func() {
 		if err := server.Shutdown(context.Background()); err != nil {
@@ -77,6 +72,21 @@ func run(port uint64, outputPath, caCertPath, caKeyPath string) int {
 	}()
 
 	go runServer(server, logger, port)
+
+	if serverMode {
+		signals := make(chan os.Signal, 1)
+		signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+		<-signals
+
+		return 0
+	}
+
+	command, err := getCommand(logger)
+	if err != nil {
+		logger.Error("Failed reading command", zap.Error(err))
+
+		return 1
+	}
 
 	instrumentedCommand := newInstrumentedCommand(context.Background(), command, port, caCertPath)
 

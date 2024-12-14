@@ -33,10 +33,12 @@ hadolint ./Dockerfile
 ### Release a new version
 
 ```shell
-brew install goreleaser
-goreleaser check syft
-git tag -a v0.1.0 -m "First release"
+brew install goreleaser syft
+goreleaser check
+git tag -a v0.1.0 -m "New release"
 git push origin v0.1.0
 rm -rf ./dist
+gh auth login --scopes=write:packages
+docker login ghcr.io -u juliendoutre -p $(gh auth token)
 GITHUB_TOKEN=$(gh auth token) goreleaser release
 ```

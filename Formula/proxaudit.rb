@@ -5,22 +5,22 @@
 class Proxaudit < Formula
   desc ""
   homepage ""
-  version "0.1.4"
+  version "0.1.7"
 
   depends_on "mkcert" => "1.4.4"
 
   on_macos do
-    on_intel do
-      url "https://github.com/juliendoutre/proxaudit/releases/download/v0.1.4/proxaudit_Darwin_x86_64.tar.gz"
-      sha256 "7ac08acc5ff6dfe2393b2f13e1bbc1686c1f9cbd56584ecdc535efd222076618"
+    if Hardware::CPU.intel?
+      url "https://github.com/juliendoutre/proxaudit/releases/download/v0.1.7/proxaudit_Darwin_x86_64.tar.gz"
+      sha256 "b554bef0f64a30ee6703a47be8408ab83489119d03e37281034716973dd195b1"
 
       def install
         bin.install "proxaudit"
       end
     end
-    on_arm do
-      url "https://github.com/juliendoutre/proxaudit/releases/download/v0.1.4/proxaudit_Darwin_arm64.tar.gz"
-      sha256 "ae56f5df67781af7ffab19005248b4dce384a63798473749610aad9073eeca65"
+    if Hardware::CPU.arm?
+      url "https://github.com/juliendoutre/proxaudit/releases/download/v0.1.7/proxaudit_Darwin_arm64.tar.gz"
+      sha256 "1bcaaf92f80ae8975c2f941199810d21ba4051cddc0cd9e29e9b646fd9bbad31"
 
       def install
         bin.install "proxaudit"
@@ -29,20 +29,20 @@ class Proxaudit < Formula
   end
 
   on_linux do
-    on_intel do
+    if Hardware::CPU.intel?
       if Hardware::CPU.is_64_bit?
-        url "https://github.com/juliendoutre/proxaudit/releases/download/v0.1.4/proxaudit_Linux_x86_64.tar.gz"
-        sha256 "f7c76b12af8c1ee02cd94851f7edf88146a181f96f539d5ff10b84b52ec9c441"
+        url "https://github.com/juliendoutre/proxaudit/releases/download/v0.1.7/proxaudit_Linux_x86_64.tar.gz"
+        sha256 "d4d857044234420e06cba7ad3ab26cc3dcf090e9ae5545671c99f26a96f780e9"
 
         def install
           bin.install "proxaudit"
         end
       end
     end
-    on_arm do
+    if Hardware::CPU.arm?
       if Hardware::CPU.is_64_bit?
-        url "https://github.com/juliendoutre/proxaudit/releases/download/v0.1.4/proxaudit_Linux_arm64.tar.gz"
-        sha256 "27d86a8ff4e93ad8fbce737b23a54c73ee127e83049e38092cd7d71ff6261276"
+        url "https://github.com/juliendoutre/proxaudit/releases/download/v0.1.7/proxaudit_Linux_arm64.tar.gz"
+        sha256 "f25f5d1f13ed33a0921ba450ff8c1a3fbd8c878dedbf2b359b876c869073b0cf"
 
         def install
           bin.install "proxaudit"

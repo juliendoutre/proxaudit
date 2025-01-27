@@ -3,7 +3,7 @@ module github.com/juliendoutre/proxaudit
 go 1.23.3
 
 require (
-	github.com/elazarl/goproxy v1.5.0
+	github.com/elazarl/goproxy v1.7.0
 	go.uber.org/zap v1.27.0
 )
 

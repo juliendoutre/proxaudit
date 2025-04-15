@@ -2,11 +2,13 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"crypto/tls"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -25,6 +27,7 @@ import (
 var (
 	version = "unknown"
 	commit  = "unknown" //nolint:gochecknoglobals
+	date    = "unknown"
 )
 
 func main() {
@@ -35,19 +38,21 @@ func main() {
 	caKeyPath := flag.String("ca-key", path.Join(mkcertDir, "rootCA-key.pem"), "path to a CA private key")
 	outputPath := flag.String("output", "stderr", "Path to a file to write logs to")
 	showVersion := flag.Bool("version", false, "Show this program's version and exit")
+	logHeader := flag.Bool("log-header", true, "Log request's header")
+	logBody := flag.Bool("log-body", false, "Log request's body")
 	serverMode := flag.Bool("server", false, "Run proxaudit as a server")
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Fprintf(os.Stdout, "proxaudit %s (%s)\n", version, commit)
+		fmt.Fprintf(os.Stdout, "proxaudit %s, commit %s, built at %s\n", version, commit, date)
 
 		return
 	}
 
-	os.Exit(run(*port, *outputPath, *caCertPath, *caKeyPath, *serverMode))
+	os.Exit(run(*port, *outputPath, *caCertPath, *caKeyPath, *serverMode, *logHeader, *logBody))
 }
 
-func run(port uint64, outputPath, caCertPath, caKeyPath string, serverMode bool) int {
+func run(port uint64, outputPath, caCertPath, caKeyPath string, serverMode, logHeader, logBody bool) int {
 	logger, err := getLogger(outputPath)
 	if err != nil {
 		log.Println("Failed creating logger")
@@ -64,7 +69,7 @@ func run(port uint64, outputPath, caCertPath, caKeyPath string, serverMode bool)
 		return 1
 	}
 
-	server := newProxyServer(port, logger)
+	server := newProxyServer(port, logger, logHeader, logBody)
 	defer func() {
 		if err := server.Shutdown(context.Background()); err != nil {
 			logger.Error("Failed shutting down HTTP proxy server", zap.Error(err))
@@ -135,7 +140,7 @@ func getCommand(logger *zap.Logger) (string, error) {
 	return strings.Join(flag.Args(), " "), nil
 }
 
-func newProxyServer(port uint64, logger *zap.Logger) *http.Server {
+func newProxyServer(port uint64, logger *zap.Logger, logHeader, logBody bool) *http.Server {
 	proxy := goproxy.NewProxyHttpServer()
 	proxy.Verbose = false
 	proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
@@ -145,7 +150,26 @@ func newProxyServer(port uint64, logger *zap.Logger) *http.Server {
 		},
 	)).DoFunc(
 		func(req *http.Request, _ *goproxy.ProxyCtx) (*http.Request, *http.Response) {
-			logger.Info("received a request", zap.String("method", req.Method), zap.String("url", req.URL.String()))
+			fields := []zap.Field{
+				zap.String("method", req.Method),
+				zap.String("url", req.URL.String()),
+			}
+
+			if logHeader {
+				fields = append(fields, zap.Any("header", req.Header))
+			}
+
+			if logBody {
+				body, err := io.ReadAll(req.Body)
+				if err == nil {
+					req.Body.Close()
+					req.Body = io.NopCloser(bytes.NewReader(body))
+				}
+
+				fields = append(fields, zap.String("body", string(body)))
+			}
+
+			logger.Info("received a request", fields...)
 
 			return req, nil
 		},

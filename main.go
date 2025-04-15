@@ -27,7 +27,7 @@ import (
 var (
 	version = "unknown"
 	commit  = "unknown" //nolint:gochecknoglobals
-	date    = "unknown"
+	date    = "unknown" //nolint:gochecknoglobals
 )
 
 func main() {

@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: box
+spec:
+  volumes:
+    - name: ca
+      emptyDir: {}
+  initContainers:
+    - name: mkcert
+      image: index.docker.io/alpine/mkcert:latest@sha256:a8f4f5af61908b4c79c2e9d1e5f23e747f29de174649209ebafcab03d4f6d5fd
+      args: ["-install"]
+      volumeMounts:
+        - name: ca
+          mountPath: /root/.local/share/mkcert
+    - name: proxaudit
+      image: ghcr.io/juliendoutre/proxaudit:v0.1.11@sha256:cefb624316a9d34585fc86f808eff9dad17f1d52572333a5cb9c86617d438fe8
+      args: ["-server"]
+      restartPolicy: Always # This ensures proxaudit runs as a sidecar container.
+      volumeMounts:
+        - name: ca
+          mountPath: /.local/share/mkcert
+  containers:
+    - name: box
+      image: index.docker.io/ubuntu:24.04@sha256:1e622c5f073b4f6bfad6632f2616c7f59ef256e96fe78bf6a595d1dc4376ac02
+      env:
+        - name: HTTP_PROXY
+          value: http://localhost:8000
+        - name: HTTPS_PROXY
+          value: http://localhost:8000
+        - name: http_proxy
+          value: http://localhost:8000
+        - name: https_proxy
+          value: http://localhost:8000
+      command: ["/bin/sh", "-c"]
+      args: ["apt update && apt upgrade --yes && apt install --yes curl mkcert && mkcert -install && sleep infinity"]
+      volumeMounts:
+        - name: ca
+          mountPath: /root/.local/share/mkcert

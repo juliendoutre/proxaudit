@@ -20,6 +20,8 @@ proxaudit -output logs.jsonl -- pip install requests # Write logs to file
 proxaudit -server # Run the proxy server only (no command wrapping)
 ```
 
+Check out [examples/k8s/](./examples/k8s/) for an example of using proxaudit as a sidecar container in Kubernetes.
+
 ## Development
 
 ### Lint the code

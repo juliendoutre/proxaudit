@@ -22,7 +22,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
         with:
-          go-version: 1.23.3
+          go-version: 1.24.2
       - name: Test
         run: go test .
       - name: Build
@@ -30,6 +30,6 @@ jobs:
       - name: Lint Go
         uses: golangci/golangci-lint-action@1481404843c368bc19ca9406f87d6e0fc97bdcfd # v7.0.0
         with:
-          version: v1.62.2
+          version: v2.1.2
       - name: Lint Dockerfile
         uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf # v3.1.0

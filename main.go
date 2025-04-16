@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -31,7 +32,7 @@ var (
 )
 
 func main() {
-	mkcertDir := path.Join(os.Getenv("HOME"), "Library", "Application Support", "mkcert")
+	mkcertDir := defaultMkcertDir()
 
 	port := flag.Uint64("port", 8000, "port to listen on")
 	caCertPath := flag.String("ca-cert", path.Join(mkcertDir, "rootCA.pem"), "path to a CA certificate")
@@ -44,12 +45,21 @@ func main() {
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Fprintf(os.Stdout, "proxaudit %s, commit %s, built at %s\n", version, commit, date)
+		fmt.Fprintf(os.Stdout, "proxaudit v%s, commit %s, built at %s\n", version, commit, date)
 
 		return
 	}
 
 	os.Exit(run(*port, *outputPath, *caCertPath, *caKeyPath, *serverMode, *logHeader, *logBody))
+}
+
+func defaultMkcertDir() string {
+	switch runtime.GOOS {
+	case "darwin":
+		return path.Join(os.Getenv("HOME"), "Library", "Application Support", "mkcert")
+	default:
+		return path.Join(os.Getenv("HOME"), ".local", "share", "mkcert")
+	}
 }
 
 func run(port uint64, outputPath, caCertPath, caKeyPath string, serverMode, logHeader, logBody bool) int {

@@ -69,9 +69,6 @@ brews:
         branch: main
   directory: Formula
   url_template: "https://github.com/juliendoutre/proxaudit/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-  dependencies:
-    - name: mkcert
-      version: 1.4.4
 
 dockers:
   - image_templates:

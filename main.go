@@ -217,7 +217,12 @@ func newInstrumentedCommand(ctx context.Context, command string, port uint64, ca
 		fmt.Sprintf("HTTPS_PROXY=http://localhost:%d", port),
 		fmt.Sprintf("http_proxy=http://localhost:%d", port),
 		fmt.Sprintf("https_proxy=http://localhost:%d", port),
+		// Node.js support:
+		// https://nodejs.org/docs/latest-v4.x/api/cli.html#cli_node_extra_ca_certs_file
 		"NODE_EXTRA_CA_CERTS="+caCertPath,
+		// Python requests package support:
+		// https://requests.readthedocs.io/en/latest/user/advanced/#ssl-cert-verification
+		"REQUESTS_CA_BUNDLE="+caCertPath,
 	)
 
 	return cmd

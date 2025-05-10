@@ -32,6 +32,10 @@ spec:
           value: http://localhost:8000
         - name: https_proxy
           value: http://localhost:8000
+        - name: NODE_EXTRA_CA_CERTS
+          value: /root/.local/share/mkcert/rootCA.pem
+        - name: REQUESTS_CA_BUNDLE
+          value: /root/.local/share/mkcert/rootCA.pem
       command: ["/bin/sh", "-c"]
       args: ["apt update && apt upgrade --yes && apt install --yes curl mkcert && mkcert -install && sleep infinity"]
       volumeMounts:

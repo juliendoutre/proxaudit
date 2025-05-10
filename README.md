@@ -6,7 +6,7 @@ proxaudit is a binary that transparently instrument any program for HTTP and HTT
 
 ```shell
 brew tap juliendoutre/proxaudit https://github.com/juliendoutre/proxaudit
-brew install proxaudit
+brew install mkcert proxaudit
 mkcert -install
 ```
 

@@ -4,7 +4,7 @@ go 1.23.3
 
 require (
 	github.com/elazarl/goproxy v1.8.3
-	go.uber.org/zap v1.27.1
+	go.uber.org/zap v1.28.0
 )
 
 require (

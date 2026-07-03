@@ -1,6 +1,6 @@
 module github.com/juliendoutre/proxaudit
 
-go 1.23.3
+go 1.25.0
 
 require (
 	github.com/elazarl/goproxy v1.8.4
@@ -9,6 +9,6 @@ require (
 
 require (
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 )
